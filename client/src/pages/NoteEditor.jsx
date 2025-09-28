@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { notesApi } from '../api/notes';
+import { fmtDate } from '../lib/date';
 
 const toTags = (s) =>
   s.split(',').map(t => t.trim()).filter(Boolean);
@@ -18,13 +19,9 @@ export default function NoteEditor() {
   const [loading, setLoading] = useState(!!id);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
+  const [updatedAt, setUpdatedAt] = useState('');
 
-  // inside NoteEditor component, after hooks:
-  useEffect(() => {
-    function onKey(e){ if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase()==='s'){ e.preventDefault(); onSave(); } }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [title, content, tagsText]);  // keep it simple
+   // keep it simple
 
   useEffect(() => {
   function onKey(e) {
@@ -41,6 +38,11 @@ export default function NoteEditor() {
   // Load existing note if editing
   useEffect(() => {
     if (!id) return;
+    if (!id || id === 'undefined') {
+     setErr('Invalid note id');
+     setLoading(false);
+     return;
+   }
     let mounted = true;
     setLoading(true);
     notesApi.get(id)
@@ -50,8 +52,10 @@ export default function NoteEditor() {
         setTitle(n.title || '');
         setContent(n.content || '');
         setTagsText(fromTags(n.tags));
+        setUpdatedAt(n.updatedAt || '');
       })
       .catch(e => setErr(e.message))
+      .catch(e => setErr(e.message || 'Failed to load note'))
       .finally(() => mounted && setLoading(false));
     return () => { mounted = false; };
   }, [id]);
@@ -98,6 +102,10 @@ export default function NoteEditor() {
       <h1 className="text-2xl font-bold">{id ? 'Edit Note' : 'New Note'}</h1>
       
       {id && <div className="text-xs text-gray-500">Last updated: {fmtDate(new Date().toISOString())}</div>}
+      {id && updatedAt && (
+       <div className="text-xs text-gray-500">Last updated: {fmtDate(updatedAt)}</div>
+      )
+    } 
 
       {err && <div className="p-2 bg-red-50 border border-red-200 text-red-700 text-sm">{err}</div>}
 
