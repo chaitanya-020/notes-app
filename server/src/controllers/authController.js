@@ -8,11 +8,13 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
 const isProd = process.env.NODE_ENV === 'production';
 
 function setAuthCookie(res, token) {
+  const isProd = process.env.NODE_ENV === 'production';
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
-    sameSite: 'lax',
-    secure: isProd,
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    sameSite: isProd ? 'none' : 'lax', // ← important for cross-site
+    secure: isProd,                    // required when sameSite is 'none'
+    path: '/',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 }
 
